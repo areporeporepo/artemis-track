@@ -2,28 +2,44 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderTrajectoryBar } from "../src/trajectory.ts";
+import type { ArtemisPosition } from "../src/types.ts";
+
+function makePos(overrides: Partial<ArtemisPosition>): ArtemisPosition {
+  return {
+    distanceEarthKm: 0, distanceMoonKm: 384400, velocityKmS: 1,
+    missionElapsedMs: 100 * 3_600_000, phase: "transit_to_moon",
+    timestamp: new Date().toISOString(), crew: [],
+    ...overrides,
+  };
+}
 
 describe("trajectory bar", () => {
-  it("shows position marker near Earth when distance is small", () => {
-    const bar = renderTrajectoryBar(1000, 383400);
+  it("shows orbit ring during earth orbit", () => {
+    const bar = renderTrajectoryBar(makePos({
+      distanceEarthKm: 1000, phase: "earth_orbit", missionElapsedMs: 3_600_000,
+      perigeeKm: 185, apogeeKm: 2222, ascending: true,
+    }));
     const stripped = bar.replace(/\x1b\[[0-9;]*m/g, "");
-    const dotPos = stripped.indexOf("◆");
-    const earthPos = stripped.indexOf("🌍");
-    assert.ok(dotPos - earthPos < 8, `dot at ${dotPos}, earth at ${earthPos}`);
+    assert.ok(stripped.includes("("), `expected orbit ring, got: ${stripped}`);
+    assert.ok(stripped.includes("185"), `expected perigee`);
+    assert.ok(stripped.includes("apogee"), `expected direction`);
   });
 
-  it("shows position marker near Moon during flyby", () => {
-    const bar = renderTrajectoryBar(380000, 4400);
-    const stripped = bar.replace(/\x1b\[[0-9;]*m/g, "");
-    const dotPos = stripped.indexOf("◆");
-    const moonPos = stripped.indexOf("🌑") >= 0 ? stripped.indexOf("🌑") : stripped.indexOf("🌘");
-    assert.ok(moonPos - dotPos < 8, `dot at ${dotPos}, moon at ${moonPos}`);
-  });
-
-  it("shows position marker in middle during transit", () => {
-    const bar = renderTrajectoryBar(192200, 192200);
+  it("shows arc with both distances during transit", () => {
+    const bar = renderTrajectoryBar(makePos({
+      distanceEarthKm: 192200, distanceMoonKm: 192200, phase: "transit_to_moon",
+    }));
     const stripped = bar.replace(/\x1b\[[0-9;]*m/g, "");
     const dotPos = stripped.indexOf("◆");
     assert.ok(dotPos > 5 && dotPos < 30, `dotPos was ${dotPos}`);
+    assert.ok(stripped.includes("🌍"), "expected Earth");
+  });
+
+  it("shows lunar altitude during flyby", () => {
+    const bar = renderTrajectoryBar(makePos({
+      distanceEarthKm: 380000, distanceMoonKm: 4400, phase: "lunar_flyby",
+    }));
+    const stripped = bar.replace(/\x1b\[[0-9;]*m/g, "");
+    assert.ok(stripped.includes("alt"), `expected altitude display, got: ${stripped}`);
   });
 });

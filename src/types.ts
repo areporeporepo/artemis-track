@@ -8,6 +8,10 @@ export interface ArtemisPosition {
   crew: string[];
   stale?: boolean;
   source?: string;
+  // Orbital elements (computed from state vectors during earth_orbit/lunar_flyby)
+  perigeeKm?: number;   // perigee altitude (km above surface)
+  apogeeKm?: number;    // apogee altitude (km above surface)
+  ascending?: boolean;   // true = climbing toward apogee, false = descending toward perigee
 }
 
 export type MissionPhase =
