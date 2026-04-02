@@ -1,0 +1,27 @@
+docs/demo.tape
+  4f43ef894c5b6f6d 1-14
+README.md
+  4f43ef894c5b6f6d 1-2,4-6,11,28-30,32
+docs/demo-loop.sh
+  4f43ef894c5b6f6d 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.4",
+  "base_commit_sha": "2dcf2e40892e43b8efb4211368090c8971ae3592",
+  "prompts": {
+    "4f43ef894c5b6f6d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac03f99f-9895-49e1-9b69-c5960593cc13",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "anh nguyen",
+      "messages": [],
+      "total_additions": 279,
+      "total_deletions": 154,
+      "accepted_lines": 191,
+      "overriden_lines": 0
+    }
+  }
+}
