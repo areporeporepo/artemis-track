@@ -114,7 +114,7 @@ Auto-refreshes every 30 seconds. Ctrl+C to quit.
 
 ## Sprite Design
 
-Modeled after Claude Code's companion system (5×12 grid, 3 frames):
+ASCII art sprite (5×12 grid, 3 animation frames):
 
 ```
 Frame 0 (idle):     Frame 1 (thrust):   Frame 2 (boost):
