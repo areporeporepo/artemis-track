@@ -41,68 +41,63 @@ function writeCache(data: ArtemisPosition): void {
   } catch {}
 }
 
-// Approximate position from mission elapsed time when API is unavailable.
-// Based on Artemis II free-return trajectory profile:
-//   0-2h: LEO orbit raising (~200-2000km)
-//   2-4h: TLI burn, accelerating to ~10km/s
-//   4-96h: coast to Moon (~1.5km/s cruise)
-//   96-110h: lunar flyby (closest ~128km from surface, ~252,000km from Earth)
-//   110-226h: return coast
-//   226-230h: reentry + splashdown
+// Artemis II trajectory waypoints: [MET_hours, earth_km, moon_km, speed_km/h]
+// Source: pre-calculated from mission profile
+const WAYPOINTS: [number, number, number, number][] = [
+  [0, 0, 384400, 28000],
+  [1, 300, 384100, 27500],
+  [2, 600, 383800, 11000],
+  [12, 6000, 378400, 8000],
+  [24, 20000, 364400, 7500],
+  [36, 50000, 334400, 7200],
+  [48, 100000, 284400, 5500],
+  [72, 200000, 184400, 4500],
+  [96, 300000, 84400, 3800],
+  [120, 370000, 14400, 3200],
+  [132, 390000, 6513, 5800],   // closest lunar approach
+  [144, 370000, 20000, 5500],
+  [168, 280000, 110000, 4800],
+  [192, 180000, 210000, 5200],
+  [216, 80000, 310000, 8000],
+  [230, 20000, 365000, 25000],
+  [240, 0, 384400, 40000],     // splashdown
+];
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
 function estimatePosition(): ArtemisPosition {
   const met = Math.max(0, Date.now() - LAUNCH_TIME.getTime());
   const hours = met / 3_600_000;
-  const MOON_DIST = 384_400;
 
-  let distEarth: number;
-  let velocity: number;
+  // Find surrounding waypoints and interpolate
+  let i = 0;
+  while (i < WAYPOINTS.length - 1 && WAYPOINTS[i + 1]![0] < hours) i++;
+
+  const wp0 = WAYPOINTS[Math.min(i, WAYPOINTS.length - 1)]!;
+  const wp1 = WAYPOINTS[Math.min(i + 1, WAYPOINTS.length - 1)]!;
+
+  const span = wp1[0] - wp0[0];
+  const t = span > 0 ? Math.min(1, Math.max(0, (hours - wp0[0]) / span)) : 0;
+
+  const distEarth = lerp(wp0[1], wp1[1], t);
+  const distMoon = lerp(wp0[2], wp1[2], t);
+  const speedKmH = lerp(wp0[3], wp1[3], t);
+
+  // Determine phase
   let phase: string;
-
-  if (hours < 2) {
-    // LEO orbit raising
-    distEarth = 200 + hours * 900;
-    velocity = 7.8;
-    phase = "earth_orbit";
-  } else if (hours < 4) {
-    // TLI burn + acceleration
-    const t = (hours - 2) / 2;
-    distEarth = 2000 + t * 20000;
-    velocity = 7.8 + t * 3;
-    phase = "transit_to_moon";
-  } else if (hours < 96) {
-    // Coast to Moon
-    const t = (hours - 4) / 92;
-    distEarth = 22000 + t * (MOON_DIST - 22000 - 10000);
-    velocity = 1.5 - t * 0.5;
-    phase = "transit_to_moon";
-  } else if (hours < 110) {
-    // Lunar flyby
-    const t = (hours - 96) / 14;
-    const closest = MOON_DIST - 130; // ~128km from lunar surface
-    distEarth = closest + Math.abs(t - 0.5) * 20000;
-    velocity = 1.0 + (1 - Math.abs(t - 0.5) * 2) * 1.5;
-    phase = "lunar_flyby";
-  } else if (hours < 226) {
-    // Return coast
-    const t = (hours - 110) / 116;
-    distEarth = MOON_DIST * (1 - t);
-    velocity = 1.0 + t * 2;
-    phase = "return_to_earth";
-  } else if (hours < 230) {
-    // Reentry
-    distEarth = Math.max(0, 2000 * (1 - (hours - 226) / 4));
-    velocity = 11.0;
-    phase = "reentry";
-  } else {
-    distEarth = 0;
-    velocity = 0;
-    phase = "complete";
-  }
+  if (hours >= 240) phase = "complete";
+  else if (hours >= 230) phase = "reentry";
+  else if (distMoon < 20000) phase = "lunar_flyby";
+  else if (distEarth > distMoon) phase = "return_to_earth";
+  else if (distEarth < 2000) phase = "earth_orbit";
+  else phase = "transit_to_moon";
 
   return {
     distanceEarthKm: Math.round(distEarth),
-    distanceMoonKm: Math.round(Math.max(0, MOON_DIST - distEarth)),
-    velocityKmS: Math.round(velocity * 100) / 100,
+    distanceMoonKm: Math.round(distMoon),
+    velocityKmS: Math.round((speedKmH / 3600) * 100) / 100, // km/h → km/s
     missionElapsedMs: met,
     phase: phase as any,
     timestamp: new Date().toISOString(),
