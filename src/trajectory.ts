@@ -2,12 +2,11 @@ import { C, EARTH_MOON_DISTANCE_KM } from "./types.ts";
 import type { MissionPhase } from "./types.ts";
 
 const ORBIT_WIDTH = 10;
-const ARC_WIDTH = 14;
+const ARC_WIDTH = 16;
 // LEO orbital period at ~400km altitude: ~92.5 minutes
 const ORBIT_PERIOD_MS = 92.5 * 60_000;
 
 // Moon phase from synodic cycle
-// Known new moon: Jan 29, 2025 12:36 UTC
 const KNOWN_NEW = new Date("2025-01-29T12:36:00Z").getTime();
 const SYNODIC = 29.53058867;
 
@@ -28,48 +27,51 @@ function buildRing(pos: number): string {
   return `${C.gray}(${before}${C.reset}${C.gold}${C.bold}◆${C.reset}${C.gray}${after})${C.reset}`;
 }
 
-function buildArc(pos: number, width: number): string {
-  const chars: string[] = [];
-  for (let i = 0; i < width; i++) {
-    if (i === pos) {
-      chars.push(`${C.gold}${C.bold}◆${C.reset}`);
-    } else {
-      const edgeDist = Math.min(i, width - 1 - i);
-      chars.push(`${C.gray}${edgeDist < 2 ? "·" : "─"}${C.reset}`);
-    }
-  }
-  return chars.join("");
+function orbitPos(elapsedMs: number, periodMs: number): number {
+  const angle = (elapsedMs / periodMs) * 2 * Math.PI;
+  return Math.round(((Math.sin(angle) + 1) / 2) * (ORBIT_WIDTH - 1));
 }
 
-// Earth orbit: 🌍(···◆·····)──────────────────354k🌕
-function renderEarthOrbit(distanceEarthKm: number, distanceMoonKm: number, missionElapsedMs: number): string {
-  const angle = (missionElapsedMs / ORBIT_PERIOD_MS) * 2 * Math.PI;
-  const x = Math.sin(angle);
-  const pos = Math.round(((x + 1) / 2) * (ORBIT_WIDTH - 1));
-  const ring = buildRing(pos);
-  const gap = "─".repeat(ARC_WIDTH);
-  return `${C.blue}🌍${C.reset}${ring}${C.dim}${fmtDist(distanceEarthKm)}${C.reset} ${C.gray}${gap}${C.reset} ${C.dim}${fmtDist(distanceMoonKm)}${C.reset}${getMoonPhaseEmoji()}`;
+// Earth orbit: 🌍(···◆·····) 65k alt
+// Only altitude matters — Moon is irrelevant while orbiting Earth
+function renderEarthOrbit(distanceEarthKm: number, missionElapsedMs: number): string {
+  const ring = buildRing(orbitPos(missionElapsedMs, ORBIT_PERIOD_MS));
+  return `${C.blue}🌍${C.reset}${ring} ${C.dim}${fmtDist(distanceEarthKm)} alt${C.reset}`;
 }
 
-// Lunar flyby: 🌍366k──────────────────(···◆·····)🌕
-function renderLunarFlyby(distanceEarthKm: number, distanceMoonKm: number, missionElapsedMs: number): string {
-  // Approximate lunar orbit period: ~2h for a flyby arc
+// Lunar flyby: (···◆·····)🌕 2k alt
+// Only lunar altitude matters — Earth is 380k+ away, irrelevant
+function renderLunarFlyby(distanceMoonKm: number, missionElapsedMs: number): string {
   const period = 2 * 3_600_000;
-  const angle = (missionElapsedMs / period) * 2 * Math.PI;
-  const x = Math.sin(angle);
-  const pos = Math.round(((x + 1) / 2) * (ORBIT_WIDTH - 1));
-  const ring = buildRing(pos);
-  const gap = "─".repeat(ARC_WIDTH);
-  return `${C.blue}🌍${C.dim}${fmtDist(distanceEarthKm)}${C.reset} ${C.gray}${gap}${C.reset} ${C.dim}${fmtDist(distanceMoonKm)}${C.reset}${ring}${getMoonPhaseEmoji()}`;
+  const ring = buildRing(orbitPos(missionElapsedMs, period));
+  return `${ring}${getMoonPhaseEmoji()} ${C.dim}${fmtDist(distanceMoonKm)} alt${C.reset}`;
 }
 
-// Transit/return: 🌍64k╭··─◆────────··╮354k🌕
+// Reentry: 🌍(···◆·····) 12k alt
+// Back to Earth altitude — same as earth_orbit but during descent
+function renderReentry(distanceEarthKm: number, missionElapsedMs: number): string {
+  const ring = buildRing(orbitPos(missionElapsedMs, 30_000));
+  return `${C.blue}🌍${C.reset}${ring} ${C.dim}${fmtDist(distanceEarthKm)} alt${C.reset}`;
+}
+
+// Transit/return: 🌍95k╭··─◆──────────··╮289k🌕
+// Both distances matter — you're between the two bodies
 function renderTransit(distanceEarthKm: number, distanceMoonKm: number, phase?: MissionPhase): string {
   const progress = Math.min(1, Math.max(0, distanceEarthKm / EARTH_MOON_DISTANCE_KM));
   const pos = Math.round(progress * (ARC_WIDTH - 1));
-  const arc = buildArc(pos, ARC_WIDTH);
-  const leftCap = phase === "return_to_earth" || phase === "reentry" ? "╮" : "╭";
-  const rightCap = phase === "return_to_earth" || phase === "reentry" ? "╰" : "╮";
+  const chars: string[] = [];
+  for (let i = 0; i < ARC_WIDTH; i++) {
+    if (i === pos) {
+      chars.push(`${C.gold}${C.bold}◆${C.reset}`);
+    } else {
+      const edgeDist = Math.min(i, ARC_WIDTH - 1 - i);
+      chars.push(`${C.gray}${edgeDist < 2 ? "·" : "─"}${C.reset}`);
+    }
+  }
+  const arc = chars.join("");
+  const returning = phase === "return_to_earth";
+  const leftCap = returning ? "╮" : "╭";
+  const rightCap = returning ? "╰" : "╮";
   return `${C.blue}🌍${C.dim}${fmtDist(distanceEarthKm)}${C.reset}${C.gray}${leftCap}${C.reset}${arc}${C.gray}${rightCap}${C.reset}${C.dim}${fmtDist(distanceMoonKm)}${C.reset}${getMoonPhaseEmoji()}`;
 }
 
@@ -79,11 +81,12 @@ export function renderTrajectoryBar(
   phase?: MissionPhase,
   missionElapsedMs?: number,
 ): string {
-  if (phase === "earth_orbit" && missionElapsedMs !== undefined) {
-    return renderEarthOrbit(distanceEarthKm, distanceMoonKm, missionElapsedMs);
+  const met = missionElapsedMs ?? 0;
+  switch (phase) {
+    case "earth_orbit":  return renderEarthOrbit(distanceEarthKm, met);
+    case "lunar_flyby":  return renderLunarFlyby(distanceMoonKm, met);
+    case "reentry":      return renderReentry(distanceEarthKm, met);
+    case "complete":     return `${C.blue}🌍${C.reset} ${C.green}splashdown${C.reset} ${C.dim}mission complete${C.reset}`;
+    default:             return renderTransit(distanceEarthKm, distanceMoonKm, phase);
   }
-  if (phase === "lunar_flyby" && missionElapsedMs !== undefined) {
-    return renderLunarFlyby(distanceEarthKm, distanceMoonKm, missionElapsedMs);
-  }
-  return renderTransit(distanceEarthKm, distanceMoonKm, phase);
 }
