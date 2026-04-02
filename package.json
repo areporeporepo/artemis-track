@@ -1,0 +1,22 @@
+{
+  "name": "artemis-track",
+  "version": "0.1.0",
+  "description": "Real-time Artemis II mission tracker for your terminal and Claude Code status line",
+  "type": "module",
+  "bin": {
+    "artemis-track": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "dev": "tsc --watch"
+  },
+  "files": [
+    "dist/"
+  ],
+  "keywords": ["artemis", "nasa", "space", "tracker", "claude-code", "statusline", "cli"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
