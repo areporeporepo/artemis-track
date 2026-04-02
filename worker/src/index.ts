@@ -6,7 +6,7 @@
  *   2. JPL Horizons API (~1min) — full state vectors
  *   3. KV cache — last known good
  *
- * Cron: every 1 min (Horizons responds in ~300ms)
+ * Cron: every 1 min (fallback — DO handles primary 1s polling)
  * GET /position — returns latest cached position
  * GET /dsn — returns raw DSN status for EM2
  * GET /health — liveness check
@@ -17,7 +17,9 @@ interface Env {
   POLLER: DurableObjectNamespace;
 }
 
-// ── Durable Object — polls DSN every 5 seconds via alarm ────────────
+// ── Durable Object — 1s alarm loop ──────────────────────────────────
+// Every tick: Horizons (1s, sequential — under concurrency limit)
+// Every 5th tick: DSN (matches NASA's 5s refresh)
 export class DsnPoller implements DurableObject {
   state: DurableObjectState;
   env: Env;
@@ -28,7 +30,6 @@ export class DsnPoller implements DurableObject {
   }
 
   async fetch(request: Request): Promise<Response> {
-    // Kick off the alarm loop
     const alarm = await this.state.storage.getAlarm();
     if (!alarm) {
       await this.state.storage.setAlarm(Date.now() + 1000);
@@ -37,20 +38,45 @@ export class DsnPoller implements DurableObject {
   }
 
   async alarm(): Promise<void> {
-    let delay = 5000;
+    let delay = 1000;
+    const tick = ((await this.state.storage.get<number>("tick")) ?? 0) + 1;
+    await this.state.storage.put("tick", tick);
+
     try {
-      const dsn = await fetchDSN();
-      if (dsn && dsn.rangeKm > 0) {
-        await this.env.ARTEMIS_KV.put("dsn", JSON.stringify({
-          ...dsn,
+      // Horizons every tick (1s) — sequential, stays under concurrency limit
+      const horizons = await fetchHorizons();
+      if (horizons) {
+        const met = Math.max(0, Date.now() - LAUNCH_TIME.getTime());
+        const pos: Position = {
+          distanceEarthKm: horizons.distanceEarthKm,
+          distanceMoonKm: horizons.distanceMoonKm,
+          velocityKmS: horizons.velocityKmS,
+          missionElapsedMs: met,
+          phase: detectPhase(met, horizons.distanceEarthKm, horizons.distanceMoonKm),
           timestamp: new Date().toISOString(),
-        }), { expirationTtl: 30 });
+          crew: CREW,
+          source: "Horizons",
+        };
+        await this.env.ARTEMIS_KV.put("position", JSON.stringify(pos), { expirationTtl: 60 });
       }
+
+      // DSN every 5th tick (5s) — matches NASA's exact refresh rate
+      if (tick % 5 === 0) {
+        const dsn = await fetchDSN();
+        if (dsn && dsn.rangeKm > 0) {
+          await this.env.ARTEMIS_KV.put("dsn", JSON.stringify({
+            ...dsn,
+            timestamp: new Date().toISOString(),
+          }), { expirationTtl: 30 });
+        }
+      }
+
+      // Reset fail counter on success
+      await this.state.storage.delete("fails");
     } catch {
-      // Backoff on failure: 15s → 30s → 60s, capped
       const fails = ((await this.state.storage.get<number>("fails")) ?? 0) + 1;
       await this.state.storage.put("fails", fails);
-      delay = Math.min(60_000, 5000 * Math.pow(2, fails));
+      delay = Math.min(60_000, 1000 * Math.pow(2, fails));
     }
 
     await this.state.storage.setAlarm(Date.now() + delay);

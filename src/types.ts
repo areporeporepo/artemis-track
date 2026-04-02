@@ -41,7 +41,7 @@ export const C = {
 export const API_URL = "https://artemis-api.testa.workers.dev/position";
 // CF Worker handles DSN (5s DO alarm) + Horizons (5min cron) merging
 export const CACHE_PATH = "/tmp/orion-status-cache.json";
-export const CACHE_TTL_MS = 10_000; // 10s — lets interpolation tick ~10 frames between fetches
+export const CACHE_TTL_MS = 3_000; // 3s — server updates every 1s, client re-fetches often
 
 export const LAUNCH_TIME = new Date("2026-04-01T22:35:00Z");
 export const EARTH_MOON_DISTANCE_KM = 384_400;
