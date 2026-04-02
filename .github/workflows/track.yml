@@ -1,0 +1,87 @@
+name: Artemis II Tracker
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # every 5 minutes
+  workflow_dispatch: {}     # manual trigger
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Grab frame from NASA livestream
+        run: |
+          yt-dlp -f "worst" --no-part -o "/tmp/frame.%(ext)s" \
+            --download-sections "*0-1" \
+            "https://www.youtube.com/watch?v=m3kR2KK8TEs" || true
+          ffmpeg -i /tmp/frame.* -vframes 1 -q:v 2 /tmp/frame.jpg 2>/dev/null || true
+          ls -la /tmp/frame.jpg
+
+      - name: Extract telemetry via NIM vision
+        env:
+          NIM_API_KEY: ${{ secrets.NIM_API_KEY }}
+        run: |
+          # Base64 encode the frame
+          IMG_B64=$(base64 -w 0 /tmp/frame.jpg)
+
+          # Send to NIM vision model
+          RESPONSE=$(curl -s https://integrate.api.nvidia.com/v1/chat/completions \
+            -H "Authorization: Bearer $NIM_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"nvidia/llama-3.2-nv-vision-instruct\",
+              \"messages\": [{
+                \"role\": \"user\",
+                \"content\": [
+                  {\"type\": \"text\", \"text\": \"Read the NASA mission control screen. Extract ANY numbers shown for distance, speed, altitude, or orbit. Return ONLY JSON: {\\\"distance_miles\\\":NUMBER_OR_NULL,\\\"speed_mph\\\":NUMBER_OR_NULL,\\\"altitude_miles\\\":NUMBER_OR_NULL}\"},
+                  {\"type\": \"image_url\", \"image_url\": {\"url\": \"data:image/jpeg;base64,$IMG_B64\"}}
+                ]
+              }],
+              \"max_tokens\": 100,
+              \"temperature\": 0
+            }")
+
+          echo "NIM response: $RESPONSE"
+
+          # Extract JSON from response
+          TELEMETRY=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          content = d.get('choices', [{}])[0].get('message', {}).get('content', '')
+          import re
+          m = re.search(r'\{[^}]+\}', content)
+          if m:
+              data = json.loads(m.group())
+              dist = data.get('distance_miles') or data.get('altitude_miles')
+              if dist:
+                  out = {
+                      'distanceEarthKm': round(dist * 1.60934),
+                      'distanceMoonKm': max(0, round(384400 - dist * 1.60934)),
+                      'velocityKmS': round((data.get('speed_mph', 0) or 0) * 1.60934 / 3600, 2),
+                      'missionElapsedMs': $(python3 -c "from datetime import datetime, timezone; print(int((datetime.now(timezone.utc) - datetime(2026, 4, 1, 22, 35, 0, tzinfo=timezone.utc)).total_seconds() * 1000))"),
+                      'phase': 'transit_to_moon',
+                      'timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
+                      'source': 'nim_vision'
+                  }
+                  print(json.dumps(out))
+              else:
+                  print('NO_DATA')
+          else:
+              print('NO_DATA')
+          " 2>/dev/null || echo "NO_DATA")
+
+          echo "Telemetry: $TELEMETRY"
+          echo "TELEMETRY=$TELEMETRY" >> $GITHUB_ENV
+
+      - name: Push to Cloudflare KV
+        if: env.TELEMETRY != 'NO_DATA' && env.TELEMETRY != ''
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          KV_NAMESPACE_ID: "81774a0a72994d188ce5b0e3e23a812e"
+        run: |
+          curl -s -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/storage/kv/namespaces/$KV_NAMESPACE_ID/values/position" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$TELEMETRY"
+          echo "Pushed to KV"
