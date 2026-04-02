@@ -75,7 +75,7 @@ export function renderStatusline(pos: ArtemisPosition): string {
   const phase = PHASE_LABELS[pos.phase] ?? pos.phase;
   const stale = pos.stale ? `${C.dim} ~${C.reset}` : "";
   const next = getNextMilestone(pos.missionElapsedMs);
-  const trajectory = renderTrajectoryBar(pos.distanceEarthKm, pos.distanceMoonKm);
+  const trajectory = renderTrajectoryBar(pos.distanceEarthKm, pos.distanceMoonKm, pos.phase, pos.missionElapsedMs);
 
   const src = pos.source ? ` ${C.dim}${pos.source}${C.reset}` : "";
   return `${C.gold}🚀 ${dist}km${C.reset} ${C.cyan}${vel}km/s${C.reset} ${C.gray}MET ${met}${C.reset} ${C.green}${phase}${C.reset} ${C.yellow}▸${next}${C.reset}${stale}${src} ${trajectory}`;

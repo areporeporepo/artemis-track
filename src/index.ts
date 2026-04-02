@@ -3,22 +3,15 @@
 
 import { fetchPosition } from "./api.ts";
 import { renderStatusline } from "./statusline.ts";
-import { startTUI } from "./tui.ts";
 
-const args = process.argv.slice(2);
-
-if (args.includes("--tui") || args.includes("-t")) {
-  startTUI();
-} else {
-  // Statusline mode: consume stdin (Claude Code JSON), fetch data, render
-  let stdin = "";
-  process.stdin.setEncoding("utf-8");
-  process.stdin.on("data", (chunk: string) => {
-    stdin += chunk;
-  });
-  process.stdin.on("end", async () => {
-    const pos = await fetchPosition();
-    const output = renderStatusline(pos);
-    process.stdout.write(output + "\n");
-  });
-}
+// Statusline mode: consume stdin (Claude Code JSON), fetch data, render
+let stdin = "";
+process.stdin.setEncoding("utf-8");
+process.stdin.on("data", (chunk: string) => {
+  stdin += chunk;
+});
+process.stdin.on("end", async () => {
+  const pos = await fetchPosition();
+  const output = renderStatusline(pos);
+  process.stdout.write(output + "\n");
+});

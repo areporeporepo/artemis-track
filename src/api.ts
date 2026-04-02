@@ -104,11 +104,13 @@ async function fetchHorizons(): Promise<ArtemisPosition> {
     }
   }
 
+  // TLI burn at T+25.13h is the real boundary between earth orbit and transit
+  const TLI_MS = 25.13 * 3_600_000;
   const phase: MissionPhase = met >= 240 * 3_600_000 ? "complete"
     : met >= 230 * 3_600_000 ? "reentry"
     : distMoon < 20000 ? "lunar_flyby"
     : distEarth > distMoon ? "return_to_earth"
-    : distEarth < 2000 ? "earth_orbit"
+    : met < TLI_MS ? "earth_orbit"
     : "transit_to_moon";
 
   return {
@@ -129,30 +131,44 @@ const LAUNCH_EPOCH = LAUNCH_TIME.getTime();
 // No monotonic locking — interpolation is smooth because we hold cache
 // long enough that we don't re-fetch mid-interpolation cycle
 
+// Recalculate phase from MET + distances — overrides server-side phase
+// TLI burn at T+25.13h is the definitive earth-orbit → transit boundary
+const TLI_MS = 25.13 * 3_600_000;
+
+function recalcPhase(met: number, distEarth: number, distMoon: number): MissionPhase {
+  if (met >= 240 * 3_600_000) return "complete";
+  if (met >= 230 * 3_600_000) return "reentry";
+  if (distMoon < 20000) return "lunar_flyby";
+  if (distEarth > distMoon) return "return_to_earth";
+  if (met < TLI_MS) return "earth_orbit";
+  return "transit_to_moon";
+}
+
 function interpolate(data: ArtemisPosition): ArtemisPosition {
   const now = Date.now();
   const met = Math.max(0, now - LAUNCH_EPOCH);
+  const phase = recalcPhase(met, data.distanceEarthKm, data.distanceMoonKm);
 
-  if (data.velocityKmS === 0) return { ...data, missionElapsedMs: met };
+  if (data.velocityKmS === 0) return { ...data, phase, missionElapsedMs: met };
 
   // Only interpolate distance during phases with clear radial direction
-  if (data.phase === "earth_orbit" || data.phase === "lunar_flyby") {
-    return { ...data, missionElapsedMs: met };
+  if (phase === "earth_orbit" || phase === "lunar_flyby") {
+    return { ...data, phase, missionElapsedMs: met };
   }
 
   const dataAge = (now - new Date(data.timestamp).getTime()) / 1000;
-  if (dataAge <= 0) return data;
+  if (dataAge <= 0) return { ...data, phase, missionElapsedMs: met };
 
   const dt = Math.min(dataAge, 600);
   const dKm = data.velocityKmS * dt;
 
-  const outbound = data.phase === "transit_to_moon";
+  const outbound = phase === "transit_to_moon";
   const sign = outbound ? 1 : -1;
 
   const earthKm = Math.max(0, Math.round(data.distanceEarthKm + sign * dKm));
   const moonKm = Math.max(0, Math.round(data.distanceMoonKm - sign * dKm));
 
-  return { ...data, distanceEarthKm: earthKm, distanceMoonKm: moonKm, missionElapsedMs: met };
+  return { ...data, phase, distanceEarthKm: earthKm, distanceMoonKm: moonKm, missionElapsedMs: met };
 }
 
 export async function fetchPosition(): Promise<ArtemisPosition> {
