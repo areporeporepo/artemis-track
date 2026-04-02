@@ -1,10 +1,9 @@
-// src/tui.ts
-import { C } from "./types.ts";
+import { type MissionPhase, C } from "./types.ts";
 import { fetchPosition, formatDistance, formatMET } from "./api.ts";
 import { renderTrajectoryBar } from "./trajectory.ts";
 import { getSpriteFrame } from "./sprites.ts";
 
-const PHASE_LABELS: Record<string, string> = {
+const PHASE_LABELS: Record<MissionPhase, string> = {
   earth_orbit: "Earth Orbit",
   transit_to_moon: "Lunar Transit",
   lunar_flyby: "Lunar Flyby",
@@ -17,8 +16,10 @@ function clear(): void {
   process.stdout.write("\x1b[2J\x1b[H");
 }
 
-function render(tick: number): void {
-  fetchPosition().then((pos) => {
+async function render(tick: number): Promise<void> {
+  const pos = await fetchPosition().catch(() => null);
+  if (!pos) return;
+  {
     clear();
     const trajectory = renderTrajectoryBar(
       pos.distanceEarthKm,
@@ -42,6 +43,7 @@ function render(tick: number): void {
    ${C.gray}Distance from Earth:${C.reset}  ${C.gold}${formatDistance(pos.distanceEarthKm)} km${C.reset}${stale}
    ${C.gray}Distance from Moon:${C.reset}   ${C.cyan}${formatDistance(pos.distanceMoonKm)} km${C.reset}
    ${C.gray}Velocity:${C.reset}             ${C.green}${pos.velocityKmS.toFixed(2)} km/s${C.reset}
+   ${C.gray}Source:${C.reset}               ${C.dim}${pos.source ?? "local"}${C.reset}
    ${C.gray}Mission Elapsed:${C.reset}      ${C.white}${formatMET(pos.missionElapsedMs)}${C.reset}
    ${C.gray}Phase:${C.reset}                ${C.green}${phase}${C.reset}
 
@@ -53,20 +55,21 @@ ${sprite}
    ${C.gray}Press Ctrl+C to exit${C.reset}
 `;
     process.stdout.write(output);
-  });
+  }
 }
 
 export function startTUI(): void {
   let tick = 0;
+  let rendering = false;
   clear();
   render(tick);
   const interval = setInterval(() => {
+    if (rendering) return;
+    rendering = true;
     tick++;
-    render(tick);
-  }, 3000);
-  process.on("SIGINT", () => {
-    clearInterval(interval);
-    clear();
-    process.exit(0);
-  });
+    render(tick).finally(() => { rendering = false; });
+  }, 1000);
+  const cleanup = () => { clearInterval(interval); clear(); process.exit(0); };
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
 }

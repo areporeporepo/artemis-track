@@ -1,30 +1,32 @@
-// src/sprites.ts
 import { C } from "./types.ts";
 
 export const SPRITE_FRAMES: string[][] = [
-  // Frame 0: idle
+  // Frame 0: idle — Orion MPCV with solar arrays (AROW style)
   [
-    "            ",
-    `   ${C.white}/\\${C.reset}       `,
-    `  ${C.white}/${C.cyan}○○${C.white}\\${C.reset}     `,
-    `  ${C.white}|${C.gray}_**_${C.white}|${C.reset}    `,
-    `  ${C.orange}⊿⊿⊿⊿${C.reset}     `,
+    `    ${C.gray}.─${C.silver}╤${C.gray}─.${C.reset}      `,
+    `   ${C.white}/${C.gray}·${C.cyan}○ ○${C.gray}·${C.white}\\${C.reset}     `,
+    `  ${C.white}/${C.gray}·─────·${C.white}\\${C.reset}    `,
+    `  ${C.silver}╘═══════╛${C.reset}    `,
+    `${C.blue}╶──${C.gray}│${C.dim}▪ ▪ ▪${C.gray}│${C.blue}──╴${C.reset}`,
+    `   ${C.gray}╰─────╯${C.reset}     `,
   ],
-  // Frame 1: thrust (windows lit, exhaust right)
+  // Frame 1: thrust (windows lit, engine firing)
   [
-    "            ",
-    `   ${C.white}/\\${C.reset}       `,
-    `  ${C.white}/${C.gold}●●${C.white}\\${C.reset}     `,
-    `  ${C.white}|${C.gray}_**_${C.white}|${C.reset}    `,
-    `  ${C.orange}⊿⊿⊿⊿${C.dim}~${C.reset}    `,
+    `    ${C.gray}.─${C.silver}╤${C.gray}─.${C.reset}      `,
+    `   ${C.white}/${C.gray}·${C.gold}● ●${C.gray}·${C.white}\\${C.reset}     `,
+    `  ${C.white}/${C.gray}·─────·${C.white}\\${C.reset}    `,
+    `  ${C.silver}╘═══════╛${C.reset}    `,
+    `${C.blue}╶──${C.gray}│${C.dim}▪ ${C.orange}▾${C.dim} ▪${C.gray}│${C.blue}──╴${C.reset}`,
+    `   ${C.gray}╰─${C.orange}─▿─${C.gray}─╯${C.reset}     `,
   ],
-  // Frame 2: boost (particles above and below)
+  // Frame 2: coast (solar panel glint)
   [
-    `  ${C.dim}~ ~${C.reset}       `,
-    `   ${C.white}/\\${C.reset}       `,
-    `  ${C.white}/${C.cyan}○○${C.white}\\${C.reset}     `,
-    `  ${C.white}|${C.gray}_**_${C.white}|${C.reset}    `,
-    `  ${C.dim}~${C.orange}⊿⊿⊿⊿${C.dim}~${C.reset}   `,
+    `    ${C.gray}.─${C.silver}╤${C.gray}─.${C.reset}      `,
+    `   ${C.white}/${C.gray}·${C.cyan}○ ○${C.gray}·${C.white}\\${C.reset}     `,
+    `  ${C.white}/${C.gray}·─────·${C.white}\\${C.reset}    `,
+    `  ${C.silver}╘═══════╛${C.reset}    `,
+    `${C.gold}╶──${C.gray}│${C.dim}▪ ▪ ▪${C.gray}│${C.gold}──╴${C.reset}`,
+    `   ${C.gray}╰─────╯${C.reset}     `,
   ],
 ];
 

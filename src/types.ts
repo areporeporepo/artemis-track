@@ -1,5 +1,3 @@
-// src/types.ts
-
 export interface ArtemisPosition {
   distanceEarthKm: number;
   distanceMoonKm: number;
@@ -9,6 +7,7 @@ export interface ArtemisPosition {
   timestamp: string;
   crew: string[];
   stale?: boolean;
+  source?: string;
 }
 
 export type MissionPhase =
@@ -40,8 +39,9 @@ export const C = {
 } as const;
 
 export const API_URL = "https://artemis-api.testa.workers.dev/position";
-export const CACHE_PATH = "/tmp/artemis-track-cache.json";
-export const CACHE_TTL_MS = 30_000;
+// CF Worker handles DSN (5s DO alarm) + Horizons (5min cron) merging
+export const CACHE_PATH = "/tmp/orion-status-cache.json";
+export const CACHE_TTL_MS = 55_000; // 55s — hold slightly under Horizons' 1min resolution so interpolation runs smooth
 
 export const LAUNCH_TIME = new Date("2026-04-01T22:35:00Z");
 export const EARTH_MOON_DISTANCE_KM = 384_400;

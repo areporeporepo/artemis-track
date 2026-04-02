@@ -1,12 +1,13 @@
-// src/api.ts
 import { readFileSync, writeFileSync } from "node:fs";
 import {
   type ArtemisPosition,
   type CachedData,
+  type MissionPhase,
   API_URL,
   CACHE_PATH,
   CACHE_TTL_MS,
   LAUNCH_TIME,
+  EARTH_MOON_DISTANCE_KM,
 } from "./types.ts";
 
 export function formatMET(ms: number): string {
@@ -19,8 +20,9 @@ export function formatMET(ms: number): string {
   return `${hours}h ${minutes}m`;
 }
 
+const distFmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 export function formatDistance(km: number): string {
-  return km.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return distFmt.format(km);
 }
 
 function readCache(): CachedData | null {
@@ -41,85 +43,148 @@ function writeCache(data: ArtemisPosition): void {
   } catch {}
 }
 
-// Artemis II trajectory waypoints: [MET_hours, earth_km, moon_km, speed_km/h]
-// Source: pre-calculated from mission profile
-const WAYPOINTS: [number, number, number, number][] = [
-  [0, 0, 384400, 28000],
-  [1, 300, 384100, 27500],
-  [2, 600, 383800, 11000],
-  [12, 6000, 378400, 8000],
-  [24, 20000, 364400, 7500],
-  [36, 50000, 334400, 7200],
-  [48, 100000, 284400, 5500],
-  [72, 200000, 184400, 4500],
-  [96, 300000, 84400, 3800],
-  [120, 370000, 14400, 3200],
-  [132, 390000, 6513, 5800],   // closest lunar approach
-  [144, 370000, 20000, 5500],
-  [168, 280000, 110000, 4800],
-  [192, 180000, 210000, 5200],
-  [216, 80000, 310000, 8000],
-  [230, 20000, 365000, 25000],
-  [240, 0, 384400, 40000],     // splashdown
-];
+// ── JPL Horizons API — fallback when CF Worker is down ──
+const HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api";
+const CREW = ["Wiseman", "Glover", "Koch", "Hansen"];
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
+function buildQS(command: string, start: Date, stop: Date): string {
+  const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
+  return [
+    "format=json", `COMMAND=%27${command}%27`, "EPHEM_TYPE=VECTORS",
+    "CENTER=%27500%40399%27",
+    `START_TIME=%27${encodeURIComponent(fmt(start))}%27`,
+    `STOP_TIME=%27${encodeURIComponent(fmt(stop))}%27`,
+    "STEP_SIZE=%271%20min%27", "VEC_TABLE=%272%27",
+  ].join("&");
 }
 
-function estimatePosition(): ArtemisPosition {
+function parseVec(result: string) {
+  let inData = false, px = 0, py = 0, pz = 0, vx = 0, vy = 0, vz = 0;
+  for (const line of result.split("\n")) {
+    if (line.includes("$$SOE")) { inData = true; continue; }
+    if (line.includes("$$EOE")) break;
+    if (!inData) continue;
+    const nums = [...line.matchAll(/[-+]?\d+\.\d+E[+-]\d+/g)].map((m) => parseFloat(m[0]));
+    if (nums.length === 3) {
+      if (Math.abs(nums[0]) > 100) { px = nums[0]; py = nums[1]; pz = nums[2]; }
+      else { vx = nums[0]; vy = nums[1]; vz = nums[2]; }
+    }
+  }
+  return px === 0 && py === 0 ? null : { px, py, pz, vx, vy, vz };
+}
+
+async function fetchHorizons(): Promise<ArtemisPosition> {
   const met = Math.max(0, Date.now() - LAUNCH_TIME.getTime());
-  const hours = met / 3_600_000;
+  const now = new Date();
+  const start = new Date(now.getTime() - 60_000);
 
-  // Find surrounding waypoints and interpolate
-  let i = 0;
-  while (i < WAYPOINTS.length - 1 && WAYPOINTS[i + 1]![0] < hours) i++;
+  // Orion + Moon in parallel — real vector distance, no approximation
+  const [orionRes, moonRes] = await Promise.all([
+    fetch(`${HORIZONS_URL}?${buildQS("-1024", start, now)}`, { signal: AbortSignal.timeout(8000) }),
+    fetch(`${HORIZONS_URL}?${buildQS("301", start, now)}`, { signal: AbortSignal.timeout(8000) }),
+  ]);
 
-  const wp0 = WAYPOINTS[Math.min(i, WAYPOINTS.length - 1)]!;
-  const wp1 = WAYPOINTS[Math.min(i + 1, WAYPOINTS.length - 1)]!;
+  if (!orionRes.ok) throw new Error(`Horizons HTTP ${orionRes.status}`);
+  const orionData = await orionRes.json() as { result: string; error?: string };
+  if (orionData.error) throw new Error(orionData.error);
+  const o = parseVec(orionData.result);
+  if (!o) throw new Error("No Orion state vector");
 
-  const span = wp1[0] - wp0[0];
-  const t = span > 0 ? Math.min(1, Math.max(0, (hours - wp0[0]) / span)) : 0;
+  const distEarth = Math.sqrt(o.px ** 2 + o.py ** 2 + o.pz ** 2);
+  const speed = Math.sqrt(o.vx ** 2 + o.vy ** 2 + o.vz ** 2);
 
-  const distEarth = lerp(wp0[1], wp1[1], t);
-  const distMoon = lerp(wp0[2], wp1[2], t);
-  const speedKmH = lerp(wp0[3], wp1[3], t);
+  let distMoon = Math.max(0, EARTH_MOON_DISTANCE_KM - distEarth);
+  if (moonRes.ok) {
+    const moonData = await moonRes.json() as { result: string; error?: string };
+    if (!moonData.error) {
+      const m = parseVec(moonData.result);
+      if (m) {
+        distMoon = Math.sqrt((o.px - m.px) ** 2 + (o.py - m.py) ** 2 + (o.pz - m.pz) ** 2);
+      }
+    }
+  }
 
-  // Determine phase
-  let phase: string;
-  if (hours >= 240) phase = "complete";
-  else if (hours >= 230) phase = "reentry";
-  else if (distMoon < 20000) phase = "lunar_flyby";
-  else if (distEarth > distMoon) phase = "return_to_earth";
-  else if (distEarth < 2000) phase = "earth_orbit";
-  else phase = "transit_to_moon";
+  const phase: MissionPhase = met >= 240 * 3_600_000 ? "complete"
+    : met >= 230 * 3_600_000 ? "reentry"
+    : distMoon < 20000 ? "lunar_flyby"
+    : distEarth > distMoon ? "return_to_earth"
+    : distEarth < 2000 ? "earth_orbit"
+    : "transit_to_moon";
 
   return {
     distanceEarthKm: Math.round(distEarth),
     distanceMoonKm: Math.round(distMoon),
-    velocityKmS: Math.round((speedKmH / 3600) * 100) / 100, // km/h → km/s
+    velocityKmS: Math.round(speed * 100) / 100,
     missionElapsedMs: met,
-    phase: phase as any,
-    timestamp: new Date().toISOString(),
-    crew: ["Wiseman", "Glover", "Koch", "Hansen"],
+    phase,
+    timestamp: now.toISOString(),
+    crew: CREW,
   };
+}
+
+// Interpolate distance using velocity between data points
+// So the km counter ticks every render, not every 5s
+const LAUNCH_EPOCH = LAUNCH_TIME.getTime();
+
+// No monotonic locking — interpolation is smooth because we hold cache
+// long enough that we don't re-fetch mid-interpolation cycle
+
+function interpolate(data: ArtemisPosition): ArtemisPosition {
+  const now = Date.now();
+  const met = Math.max(0, now - LAUNCH_EPOCH);
+
+  if (data.velocityKmS === 0) return { ...data, missionElapsedMs: met };
+
+  // Only interpolate distance during phases with clear radial direction
+  if (data.phase === "earth_orbit" || data.phase === "lunar_flyby") {
+    return { ...data, missionElapsedMs: met };
+  }
+
+  const dataAge = (now - new Date(data.timestamp).getTime()) / 1000;
+  if (dataAge <= 0) return data;
+
+  const dt = Math.min(dataAge, 600);
+  const dKm = data.velocityKmS * dt;
+
+  const outbound = data.phase === "transit_to_moon";
+  const sign = outbound ? 1 : -1;
+
+  const earthKm = Math.max(0, Math.round(data.distanceEarthKm + sign * dKm));
+  const moonKm = Math.max(0, Math.round(data.distanceMoonKm - sign * dKm));
+
+  return { ...data, distanceEarthKm: earthKm, distanceMoonKm: moonKm, missionElapsedMs: met };
 }
 
 export async function fetchPosition(): Promise<ArtemisPosition> {
   const cached = readCache();
-  if (cached && !cached.data.stale) return cached.data;
+  const needsRefresh = !cached || cached.data.stale;
 
-  try {
-    const res = await fetch(API_URL, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data: ArtemisPosition = await res.json();
-    // Only use API data if it's not stale — local estimation is better than stale zeros
-    if (!data.stale) {
-      writeCache(data);
-      return data;
-    }
-  } catch {}
+  if (needsRefresh) {
+    // Primary: CF Worker (merges DSN 5s + Horizons 5min on the edge)
+    try {
+      const res = await fetch(API_URL, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        const data: ArtemisPosition = await res.json();
+        writeCache(data);
+        return interpolate(data);
+      }
+    } catch {}
 
-  // Prefer local estimation over stale API/cache data
-  return estimatePosition();
+    // Fallback: direct Horizons call
+    try {
+      const pos = await fetchHorizons();
+      writeCache(pos);
+      return interpolate(pos);
+    } catch {}
+  }
+
+  // Interpolate cached data — this is what makes km tick every second
+  if (cached) return interpolate(cached.data);
+
+  return {
+    distanceEarthKm: 0, distanceMoonKm: EARTH_MOON_DISTANCE_KM,
+    velocityKmS: 0, missionElapsedMs: Math.max(0, Date.now() - LAUNCH_TIME.getTime()),
+    phase: "earth_orbit", timestamp: new Date().toISOString(),
+    crew: CREW, stale: true,
+  };
 }
