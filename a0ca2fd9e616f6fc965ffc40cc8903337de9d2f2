@@ -1,0 +1,54 @@
+README.md
+  5845f3c743e41e0c 68-82,84-97,107-143
+  632a81f370dac0de 1-2,5-67,83,98-106,144-146,152,158,169
+.github/workflows/update-readme.yml
+  5845f3c743e41e0c 1-280
+docs/demo.svg
+  4f43ef894c5b6f6d 1-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a0ca2fd9e616f6fc965ffc40cc8903337de9d2f2",
+  "prompts": {
+    "4f43ef894c5b6f6d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac03f99f-9895-49e1-9b69-c5960593cc13",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "anh nguyen",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 158,
+      "overriden_lines": 0
+    },
+    "5845f3c743e41e0c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3908ade5-1e3b-4f3e-b546-44ab376efbd6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "anh nguyen",
+      "messages": [],
+      "total_additions": 465,
+      "total_deletions": 120,
+      "accepted_lines": 346,
+      "overriden_lines": 0
+    },
+    "632a81f370dac0de": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca448930-ead6-4c3c-8e45-a03de8560c55",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "anh nguyen",
+      "messages": [],
+      "total_additions": 84,
+      "total_deletions": 5,
+      "accepted_lines": 83,
+      "overriden_lines": 0
+    }
+  }
+}
