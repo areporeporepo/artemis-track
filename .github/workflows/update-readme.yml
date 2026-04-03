@@ -29,7 +29,7 @@ jobs:
       - uses: 1password/load-secrets-action@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0 # v2.0.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          ANTHROPIC_API_KEY: op://CI-CD Secrets/Anthropic API Key (Claude OAuth)/credential
+          ANTHROPIC_API_KEY: op://CI-CD Secrets/Anthropic API Key/credential
           CONGRESS_API_KEY: op://CI-CD Secrets/Congress.gov API Key/credential
 
       # ── 1. Fetch all public API data in parallel ───────────────
