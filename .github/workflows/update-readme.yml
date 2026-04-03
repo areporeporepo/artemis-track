@@ -26,23 +26,15 @@ jobs:
       # ── 0. Load secrets from 1Password ─────────────────────────
       #    Only secret in GitHub: OP_SERVICE_ACCOUNT_TOKEN
       #    Everything else lives in 1Password — rotate once, propagates everywhere
-      - uses: 1password/load-secrets-action/configure@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0 # v2.0.0
+      - uses: 1password/load-secrets-action@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0 # v2.0.0
         with:
           service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-
-      - uses: 1password/load-secrets-action@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0 # v2.0.0
-        id: secrets
-        with:
-          export-env: false
         env:
           ANTHROPIC_API_KEY: op://CI-CD Secrets/Anthropic API Key (Claude OAuth)/credential
           CONGRESS_API_KEY: op://CI-CD Secrets/Congress.gov API Key/credential
 
       # ── 1. Fetch all public API data in parallel ───────────────
-      #    Congress key is optional (placeholder until signup)
       - name: Fetch EPIC, Congress, Polymarket, Kalshi, USAspending
-        env:
-          CONGRESS_API_KEY: ${{ steps.secrets.outputs.CONGRESS_API_KEY }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/data
@@ -167,10 +159,8 @@ jobs:
           fi
 
       # ── 3. Synthesize with Opus 4.6 ────────────────────────────
-      #    ANTHROPIC_API_KEY scoped to this step ONLY
+      #    ANTHROPIC_API_KEY loaded by 1Password action (auto-masked in logs)
       - name: Update README via Opus 4.6
-        env:
-          ANTHROPIC_API_KEY: ${{ steps.secrets.outputs.ANTHROPIC_API_KEY }}
         run: |
           set -euo pipefail
 
