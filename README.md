@@ -1,5 +1,3 @@
-<h1 align="center">🌍 earth</h1>
-
 <p align="center">
   <img src="docs/art002e000192-hello-world.jpg" alt="Hello, World — Earth photographed from Orion by Reid Wiseman during Artemis II, April 2, 2026" width="100%"/>
 </p>
