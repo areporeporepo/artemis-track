@@ -167,7 +167,7 @@ jobs:
           echo "::add-mask::${ANTHROPIC_API_KEY}"
 
           python3 << 'PYEOF'
-          import json, os, glob, urllib.request, sys
+          import json, os, glob, urllib.request, sys, time
 
           api_key = os.environ.get("ANTHROPIC_API_KEY", "")
           if not api_key:
@@ -206,36 +206,57 @@ jobs:
           {json.dumps(data, indent=2)[:12000]}
           """
 
-          body = json.dumps({
-              "model": "claude-opus-4-6",
-              "max_tokens": 8000,
-              "messages": [{"role": "user", "content": prompt}]
-          }).encode()
+          def call_api(model, max_retries=3):
+              """Call Anthropic API with retry on 429."""
+              body = json.dumps({
+                  "model": model,
+                  "max_tokens": 8000,
+                  "messages": [{"role": "user", "content": prompt}]
+              }).encode()
 
-          req = urllib.request.Request(
-              "https://api.anthropic.com/v1/messages",
-              data=body,
-              headers={
-                  "x-api-key": api_key,
-                  "anthropic-version": "2023-06-01",
-                  "content-type": "application/json"
-              }
-          )
+              for attempt in range(max_retries):
+                  req = urllib.request.Request(
+                      "https://api.anthropic.com/v1/messages",
+                      data=body,
+                      headers={
+                          "x-api-key": api_key,
+                          "anthropic-version": "2023-06-01",
+                          "content-type": "application/json"
+                      }
+                  )
+                  try:
+                      with urllib.request.urlopen(req, timeout=120) as resp:
+                          return json.loads(resp.read())
+                  except urllib.error.HTTPError as e:
+                      if e.code == 429 and attempt < max_retries - 1:
+                          wait = (attempt + 1) * 15
+                          print(f"Rate limited ({model}), waiting {wait}s... (attempt {attempt+1}/{max_retries})")
+                          time.sleep(wait)
+                          continue
+                      raise
+              return None
 
+          # Try Opus first, fall back to Sonnet on persistent 429
           try:
-              with urllib.request.urlopen(req, timeout=120) as resp:
-                  result = json.loads(resp.read())
-                  content = result["content"][0]["text"]
-                  with open("README.md", "w") as f:
-                      f.write(content)
-                  print("README updated successfully")
+              result = call_api("claude-opus-4-6")
+              print("Used: claude-opus-4-6")
           except urllib.error.HTTPError as e:
-              # Never print response body — could reflect key in error
-              print(f"::error::Anthropic API returned {e.code}")
-              sys.exit(1)
-          except Exception as e:
-              print(f"::error::API call failed: {type(e).__name__}")
-              sys.exit(1)
+              if e.code == 429:
+                  print("::warning::Opus rate limited, falling back to Sonnet")
+                  try:
+                      result = call_api("claude-sonnet-4-6-20250514")
+                      print("Used: claude-sonnet-4-6 (fallback)")
+                  except urllib.error.HTTPError as e2:
+                      print(f"::error::Sonnet also failed: {e2.code}")
+                      sys.exit(1)
+              else:
+                  print(f"::error::Anthropic API returned {e.code}")
+                  sys.exit(1)
+
+          content = result["content"][0]["text"]
+          with open("README.md", "w") as f:
+              f.write(content)
+          print("README updated successfully")
           PYEOF
 
       # ── 4. Commit and push if changed ──────────────────────────
