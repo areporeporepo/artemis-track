@@ -109,33 +109,9 @@ The White House proposed cutting NASA 23% while increasing Artemis exploration b
 </p>
 
 <p align="center">
-  DSCOVR/EPIC · March 25, 2026 18:13:24 UTC · Americas facing · 1.58M km from Earth
+  <sub>DSCOVR/EPIC · 2026-03-25 18:13:24 UTC · 6.92°N 96.59°W · 1.58M km from Earth · id <code>20260325181812</code><br/>
+  source: <a href="https://epic.gsfc.nasa.gov/api/natural/date/2026-03-25">epic.gsfc.nasa.gov/api/natural</a> · DSCOVR J2000 x=1566957 y=21236 z=186509 km</sub>
 </p>
-
-### EPIC Metadata
-
-> Source: `GET https://epic.gsfc.nasa.gov/api/natural/date/2026-03-25`
-
-| Field | Value |
-|-------|-------|
-| Camera | EPIC (Earth Polychromatic Imaging Camera) |
-| Spacecraft | NOAA DSCOVR at Sun–Earth L1 |
-| Identifier | `20260325181812` |
-| Capture | 2026-03-25 18:13:24 UTC |
-| Earth Centroid | 6.92°N, 96.59°W |
-| DSCOVR J2000 (km) | x=1,566,957 · y=21,236 · z=186,509 |
-| Moon J2000 (km) | x=−26,982 · y=326,363 · z=174,692 |
-| Sun J2000 (km) | x=148,688,868 · y=11,318,578 · z=4,905,867 |
-| DSCOVR–Earth distance | ~1,578,000 km |
-| Moon–Earth distance | ~371,100 km |
-| Attitude quaternions | q₀=0.054 · q₁=0.310 · q₂=−0.949 · q₃=0.025 |
-| API version | 04 |
-
-### Data Sources
-
-- EPIC API: [epic.gsfc.nasa.gov/api/natural](https://epic.gsfc.nasa.gov/api/natural)
-- Image archive: [epic.gsfc.nasa.gov/archive/natural/2026/03/25/png/](https://epic.gsfc.nasa.gov/archive/natural/2026/03/25/png/)
-- DSCOVR mission: [nesdis.noaa.gov/dscovr](https://www.nesdis.noaa.gov/current-satellite-missions/currently-flying/dscovr-deep-space-climate-observatory)
 
 ---
 

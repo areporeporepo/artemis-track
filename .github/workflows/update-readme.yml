@@ -207,7 +207,7 @@ jobs:
           """
 
           body = json.dumps({
-              "model": "claude-opus-4-6-20250415",
+              "model": "claude-opus-4-6",
               "max_tokens": 8000,
               "messages": [{"role": "user", "content": prompt}]
           }).encode()
