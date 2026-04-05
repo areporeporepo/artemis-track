@@ -31,6 +31,10 @@ MIT
 
 ---
 
+<details>
+<summary><b>Artemis II — Orion</b></summary>
+<br/>
+
 <p align="center">
   <img src="docs/art002e009006-to-the-moon.jpg" alt="The Moon from Orion — Artemis II Flight Day 4, April 4, 2026" width="100%"/>
 </p>
@@ -45,7 +49,11 @@ MIT
 
 <sub>Nikon D5 · 22mm f/4.0 · ¼s ISO 51200 · 5568×3712 · <a href="https://www.nasa.gov/image-article/hello-world/">art002e000192</a> · 2026-04-03 00:27:39 UTC−05</sub>
 
----
+</details>
+
+<details>
+<summary><b>Archive — What Artemis II will see again</b></summary>
+<br/>
 
 <p align="center">
   <img src="docs/lunar-farside-AS16-M-3021.png" alt="Lunar far side — Apollo 16 Metric Camera, April 1972" width="100%"/>
@@ -60,3 +68,5 @@ MIT
 </p>
 
 <sub>LROC WAC mosaic · 100 m/pixel · 1242×1242 · PIA14024 · Lunar Reconnaissance Orbiter · Shackleton crater visible at center · 2009–2011</sub>
+
+</details>
