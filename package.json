@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:native": "bash scripts/build-native.sh",
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "dev": "tsc --watch"
   },
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "esbuild": "^0.28.0",
     "typescript": "^6.0.2"
   }
 }
