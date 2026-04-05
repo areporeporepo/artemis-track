@@ -29,9 +29,11 @@ MIT
 
 ---
 
+<!-- gallery-slideshow hidden while Earthrise is featured
 <p align="center">
   <img src="docs/gallery-slideshow.svg" alt="Photo gallery — crossfade slideshow with metadata" width="100%"/>
 </p>
+-->
 
 ---
 
