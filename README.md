@@ -3,7 +3,7 @@
 Real-time Artemis II tracker for your terminal.
 
 <p align="center">
-  <video src="earthrise.mp4" autoplay loop muted playsinline width="100%">
+  <video src="earthrise.mp4" autoplay loop muted playsinline width="100%" aria-label="Earthrise — JAXA Kaguya HDTV, April 2008">
     <img src="earthrise.gif" alt="Earthrise — JAXA Kaguya HDTV, April 2008" width="100%"/>
   </video>
 </p>
