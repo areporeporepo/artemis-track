@@ -29,7 +29,7 @@ MIT
 
 ---
 
-<details open>
+<details>
 <summary><b>① Earthrise — Apollo 8</b></summary>
 <br/>
 
