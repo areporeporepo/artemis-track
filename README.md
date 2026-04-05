@@ -24,7 +24,7 @@ MIT
 ---
 
 <details open>
-<summary><b>① Earthrise — Apollo 8, 1968</b></summary>
+<summary><b>① Earthrise — Apollo 8</b></summary>
 <br/>
 
 <p align="center">
@@ -36,7 +36,7 @@ MIT
 </details>
 
 <details>
-<summary><b>② To the Moon — Artemis II, Flight Day 4</b></summary>
+<summary><b>② Orion — The Moon</b></summary>
 <br/>
 
 <p align="center">
@@ -48,7 +48,7 @@ MIT
 </details>
 
 <details>
-<summary><b>③ "Hello, World" — Artemis II, Flight Day 1</b></summary>
+<summary><b>③ Orion — Earth</b></summary>
 <br/>
 
 <p align="center">
@@ -60,7 +60,7 @@ MIT
 </details>
 
 <details>
-<summary><b>④ Lunar Far Side — Apollo 16, 1972</b></summary>
+<summary><b>④ Apollo 16 — Lunar Far Side</b></summary>
 <br/>
 
 <p align="center">
@@ -72,7 +72,7 @@ MIT
 </details>
 
 <details>
-<summary><b>⑤ Lunar South Pole — LRO, 2009–2011</b></summary>
+<summary><b>⑤ LRO — Lunar South Pole</b></summary>
 <br/>
 
 <p align="center">
