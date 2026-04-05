@@ -3,7 +3,9 @@
 Real-time Artemis II tracker for your terminal.
 
 <p align="center">
-  <img src="earthrise.gif" alt="Earthrise — JAXA Kaguya HDTV, April 2008" width="100%"/>
+  <video src="earthrise.mp4" width="100%" autoplay loop muted playsinline>
+    <img src="earthrise.gif" alt="Earthrise — JAXA Kaguya HDTV, April 2008" width="100%"/>
+  </video>
 </p>
 
 <sub>JAXA/NHK Kaguya (SELENE) HDTV — real Earthrise from lunar orbit, April 2008</sub>
