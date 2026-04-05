@@ -13,15 +13,15 @@
 ---
 
 <p align="center">
-  <img src="docs/orion-moon-selfie-apr3.jpg" alt="Orion spacecraft with the Moon visible in the background, Artemis II Flight Day 2, April 3, 2026" width="100%"/>
+  <img src="docs/art002e009006-to-the-moon.jpg" alt="The Moon photographed from Orion on Artemis II Flight Day 4, showing Orientale basin — April 4, 2026" width="100%"/>
 </p>
 
 <p align="center">
-  <b>Orion + Moon</b> — solar array camera, Artemis II Flight Day 2<br/>
-  April 3, 2026 · Moon visible behind Orion en route to lunar flyby
+  <b>"To the Moon"</b> — Artemis II crew, Flight Day 4<br/>
+  April 4, 2026 · South Pole at top · Orientale basin visible on right edge — first time humans have seen the entire basin
 </p>
 
-<sub>NASA · iPhone 17 Pro Max · source: NASA social media</sub>
+<sub>Nikon D5 · 400mm f/4.5-5.6 · 1/640s f/18 ISO 500 · 5568×3712 · <a href="https://www.nasa.gov/image-detail/amf-art002e009006/">art002e009006</a> · 2026-04-04 02:03:18 UTC</sub>
 
 ---
 
