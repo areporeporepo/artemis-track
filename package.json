@@ -1,7 +1,7 @@
 {
   "name": "orion-status",
   "version": "0.1.0",
-  "description": "Real-time Artemis II mission tracker for your terminal and Claude Code status line",
+  "description": "",
   "type": "module",
   "bin": {
     "orion-status": "./dist/index.js"

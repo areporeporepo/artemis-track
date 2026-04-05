@@ -1,7 +1,5 @@
 ## orion-status
 
-Real-time Artemis II tracker for your terminal.
-
 <p align="center">
   <img src="docs/demo.gif" alt="orion-status live demo" width="100%"/>
 </p>
