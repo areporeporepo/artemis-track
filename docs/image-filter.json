@@ -10,6 +10,13 @@
     "applied": "2026-04-05T16:55:30.356214+00:00",
     "note": "Warm red/infrared color tint applied to all gallery images. Inspired by space telescope infrared imaging (JWST, Spitzer). Artistic filter, not scientific false-color."
   },
+  "video_filter": {
+    "filter": "res-light",
+    "method": "css-filter",
+    "css": "filter: sepia(0.35) brightness(1.12) saturate(1.25)",
+    "target_file": "earthrise-earthset-art002.mp4",
+    "note": "Warm, bright res-light CSS filter applied to the Artemis II earthrise/earthset hero video."
+  },
   "images_processed": [
     "art002e-koch-earth.jpg",
     "art002e000192-hello-world.jpg",
