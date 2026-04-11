@@ -3,10 +3,10 @@
 Real-time lunar mission tracker for your claude. Artemis II has returned (🌊 splashdown 2026-04-11) — now counting down to **Artemis III**. See [`docs/schedule.md`](docs/schedule.md) for the full space schedule until launch.
 
 <p align="center">
-  <img src="docs/artemis3-orion-hls-docking.jpg" alt="Artemis III — Orion docking with Starship HLS in lunar orbit" width="100%"/>
+  <img src="docs/starship-propellant-transfer.jpg" alt="SpaceX Starship tanker transferring propellant to Starship depot in LEO" width="100%"/>
 </p>
 
-<sub>NASA/SpaceX artist concept — Orion docking with SpaceX's Starship Human Landing System (HLS) in lunar orbit for <b>Artemis III</b>, the first crewed lunar landing since Apollo 17. Two astronauts will transfer to HLS and descend to the south pole; two remain aboard Orion. This is the next milestone the Artemis II test flight is paving the way for.</sub>
+<sub>NASA/SpaceX artist concept — a Starship tanker (bottom) transferring propellant to a Starship depot (top) in low Earth orbit · the single highest-stakes pass/fail test in the entire Artemis stack · vehicle-to-vehicle cryogenic propellant transfer at 100+ ton scale has never been done · per <a href="https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf">NASA OIG IG-26-004 (Mar 2026)</a> it is "one of the most significant technical challenges" facing the program · <b>infrared-red-tint filter</b></sub>
 
 <p align="center">
   <img src="docs/demo.gif" alt="orion-status live demo" width="100%"/>
