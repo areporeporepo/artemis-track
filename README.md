@@ -1,6 +1,6 @@
 ## orion-status
 
-Real-time Artemis II tracker for your terminal.
+Real-time lunar mission tracker for your terminal. Artemis II has returned (🌊 splashdown 2026-04-11) — now counting down to **Artemis III**. See [`docs/schedule.md`](docs/schedule.md) for the full space schedule until launch.
 
 <p align="center">
   <img src="docs/artemis3-orion-hls-docking.jpg" alt="Artemis III — Orion docking with Starship HLS in lunar orbit" width="100%"/>
