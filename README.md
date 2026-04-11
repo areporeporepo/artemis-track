@@ -3,12 +3,10 @@
 Real-time Artemis II tracker for your terminal.
 
 <p align="center">
-  <video src="docs/earthrise-earthset-art002.mp4" autoplay loop muted playsinline width="100%" style="filter: sepia(0.35) brightness(1.12) saturate(1.25)" aria-label="Earthrise and Earthset — Artemis II, April 2026">
-    <img src="docs/earthrise-earthset-art002.gif" alt="Earthrise and Earthset — Artemis II, April 2026" width="100%"/>
-  </video>
+  <img src="docs/artemis3-orion-hls-docking.jpg" alt="Artemis III — Orion docking with Starship HLS in lunar orbit" width="100%"/>
 </p>
 
-<sub>NASA Nikon D5 · Artemis II · Earthrise &amp; Earthset from lunar orbit · April 2026 · <b>res-light filter</b></sub>
+<sub>NASA/SpaceX artist concept — Orion docking with SpaceX's Starship Human Landing System (HLS) in lunar orbit for <b>Artemis III</b>, the first crewed lunar landing since Apollo 17. Two astronauts will transfer to HLS and descend to the south pole; two remain aboard Orion. This is the next milestone the Artemis II test flight is paving the way for.</sub>
 
 <p align="center">
   <img src="docs/demo.gif" alt="orion-status live demo" width="100%"/>
